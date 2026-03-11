@@ -12,6 +12,11 @@ if %errorlevel% neq 0 (
 )
 
 echo 正在檢查可處理的瀏覽器...
+echo [提醒] 本工具執行期間可能會自動關閉所有已開啟的 Chrome 與 Edge 瀏覽器。
+echo [提醒] 請先儲存尚未存檔的工作，再決定是否繼續。
+echo.
+choice /C YN /N /M "是否繼續執行？[Y/N]: "
+if errorlevel 2 exit /b 0
 echo.
 
 :: ================= 設定區塊 =================
@@ -37,11 +42,15 @@ echo --------------------------------------------------
 echo.
 
 if %processed_count% gtr 0 (
-    call :prompt_restart
-) else (
-    timeout /t 8 >nul
+    echo 正在關閉已套用政策的瀏覽器...
+    for %%P in (%restart_targets%) do (
+        taskkill /F /IM %%P /T >nul 2>&1
+    )
+    echo 已完成瀏覽器關閉作業。
+    echo.
 )
 
+timeout /t 6 >nul
 exit /b 0
 
 :process_browser
@@ -89,24 +98,6 @@ echo.
 
 set "restart_targets=%restart_targets% %process_name%"
 set /a processed_count+=1
-exit /b 0
-
-:prompt_restart
-echo 是否要立即關閉已套用政策的瀏覽器，讓設定生效？
-echo 8 秒內按 Y 立即關閉，否則將保留目前瀏覽器視窗。
-choice /C YN /N /T 8 /D N /M "[Y/N]: "
-if errorlevel 2 (
-    echo 已取消關閉瀏覽器，請稍後自行重新開啟。
-    echo.
-    exit /b 0
-)
-
-echo 正在關閉已套用政策的瀏覽器...
-for %%P in (%restart_targets%) do (
-    taskkill /F /IM %%P /T >nul 2>&1
-)
-echo 已完成瀏覽器關閉作業。
-echo.
 exit /b 0
 
 :is_browser_installed
