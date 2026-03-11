@@ -1,4 +1,5 @@
-:: Chrome 與 Edge 彈出式視窗及私有網路存取政策修復腳本
+:: Chrome & Edge 瀏覽器政策調整工具
+:: 進行彈出式視窗及私有網路存取政策的調整
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -22,6 +23,7 @@ set "url3=[*.]nat.gov.tw"
 
 set /a processed_count=0
 set /a skipped_count=0
+set "restart_targets="
 
 call :process_browser "Google Chrome" "chrome.exe" "Software\Policies\Google\Chrome" "chrome://policy"
 call :process_browser "Microsoft Edge" "msedge.exe" "Software\Policies\Microsoft\Edge" "edge://policy"
@@ -33,7 +35,13 @@ echo 已套用政策的瀏覽器數量: %processed_count%
 echo 已略過的瀏覽器數量: %skipped_count%
 echo --------------------------------------------------
 echo.
-timeout /t 8 >nul
+
+if %processed_count% gtr 0 (
+    call :prompt_restart
+) else (
+    timeout /t 8 >nul
+)
+
 exit /b 0
 
 :process_browser
@@ -75,14 +83,30 @@ reg query "HKEY_LOCAL_MACHINE\%reg_root%\PopupsAllowedForUrls" 2>nul
 echo --------------------------------------------------
 echo.
 
-echo 正在關閉 %browser_name% 以套用政策...
-taskkill /F /IM %process_name% /T >nul 2>&1
-
 echo 設定完成。
 echo 請重新開啟 %browser_name%，並在網址列檢查 %policy_url%。
 echo.
 
+set "restart_targets=%restart_targets% %process_name%"
 set /a processed_count+=1
+exit /b 0
+
+:prompt_restart
+echo 是否要立即關閉已套用政策的瀏覽器，讓設定生效？
+echo 8 秒內按 Y 立即關閉，否則將保留目前瀏覽器視窗。
+choice /C YN /N /T 8 /D N /M "[Y/N]: "
+if errorlevel 2 (
+    echo 已取消關閉瀏覽器，請稍後自行重新開啟。
+    echo.
+    exit /b 0
+)
+
+echo 正在關閉已套用政策的瀏覽器...
+for %%P in (%restart_targets%) do (
+    taskkill /F /IM %%P /T >nul 2>&1
+)
+echo 已完成瀏覽器關閉作業。
+echo.
 exit /b 0
 
 :is_browser_installed
