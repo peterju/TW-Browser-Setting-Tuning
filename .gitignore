@@ -1,0 +1,16 @@
+# --- Windows 系統雜物 ---
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# --- 批次檔執行可能產生的暫存檔 ---
+*.tmp
+*.log
+*.bak
+
+# --- 編輯器相關 (如果是用 VS Code 撰寫) ---
+.vscode/
+
+# --- 壓縮檔 (如果有打包下載) ---
+*.zip
+*.7z
